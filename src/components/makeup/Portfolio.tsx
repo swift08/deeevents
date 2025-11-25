@@ -1,5 +1,9 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { X, ArrowLeft, ArrowRight } from "lucide-react";
+import { X, ArrowLeft, ArrowRight, Volume2, VolumeX } from "lucide-react";
+
+// Import portfolio videos
+import portfolioVideo1 from "@/assets/portfolio video/C5443.mp4";
+import portfolioVideo2 from "@/assets/portfolio video/C5444.mp4";
 
 // Import all portfolio images
 import portfolio01 from "@/assets/portfolio images/portfolio-01.jpg";
@@ -191,6 +195,59 @@ const Portfolio = () => {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const lightboxImageRef = useRef<HTMLImageElement | null>(null);
+  const [imagePosition, setImagePosition] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ image: PortfolioImage; position: { x: number; y: number; width: number; height: number } } | null>(null);
+  const pressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isPressingRef = useRef(false);
+  
+  // Video state and refs
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+  const [videoAudio, setVideoAudio] = useState<{ [key: string]: boolean }>({
+    video1: false,
+    video2: false,
+  });
+
+  const portfolioVideos = [
+    { 
+      id: "video1", 
+      title: "Portfolio Showreel 1", 
+      src: portfolioVideo1,
+      aspectRatio: "9/16", // Instagram Reel ratio (vertical)
+      caption: "Transformations that speak volumes • Bridal artistry redefined",
+      sideQuotes: [
+        "Where beauty meets",
+        "artistry",
+        "500+ brides",
+        "transformed"
+      ],
+      decorativeText: "✨"
+    },
+    { 
+      id: "video2", 
+      title: "Portfolio Showreel 2", 
+      src: portfolioVideo2,
+      aspectRatio: "16/9", // YouTube ratio (horizontal)
+      caption: "Every brushstroke tells a story • Crafting perfection, one look at a time",
+      sideQuotes: [
+        "Crafting",
+        "perfection",
+        "one look",
+        "at a time"
+      ],
+      decorativeText: "💎"
+    },
+  ];
+
+  const handleSoundToggle = useCallback((videoId: string) => {
+    setVideoAudio((prev) => {
+      const newState = { ...prev, [videoId]: !prev[videoId] };
+      const video = videoRefs.current[videoId];
+      if (video) {
+        video.muted = !newState[videoId];
+      }
+      return newState;
+    });
+  }, []);
 
   const visibleImages = useMemo(() => allPortfolioImages.slice(0, visibleCount), [visibleCount]);
   const hasMoreImages = visibleCount < allPortfolioImages.length;
@@ -200,14 +257,90 @@ const Portfolio = () => {
     return allPortfolioImages.findIndex((img) => img.id === selectedImage.id);
   }, [selectedImage]);
 
+  const handleImagePressStart = useCallback((image: PortfolioImage, e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isPressingRef.current = true;
+    
+    // Get the pressed image container position
+    const target = e.currentTarget as HTMLElement;
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      const imgElement = target.querySelector('img');
+      if (imgElement) {
+        const imgRect = imgElement.getBoundingClientRect();
+        const position = {
+          x: imgRect.left + imgRect.width / 2,
+          y: imgRect.top + imgRect.height / 2,
+          width: imgRect.width,
+          height: imgRect.height
+        };
+        
+        // Show preview popup immediately
+        setPreviewImage({ image, position });
+        
+        // After 1-2 seconds, open fullscreen
+        pressTimerRef.current = setTimeout(() => {
+          if (isPressingRef.current) {
+            setImagePosition(position);
+            setSelectedImage(image);
+            setImageLoaded(false);
+            setPreviewImage(null);
+          }
+        }, 1500);
+      }
+    }
+  }, []);
+
+  const handleImagePressEnd = useCallback((image: PortfolioImage, e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+    
+    // If preview is showing, open fullscreen
+    if (previewImage && previewImage.image.id === image.id) {
+      setImagePosition(previewImage.position);
+      setSelectedImage(image);
+      setImageLoaded(false);
+      setPreviewImage(null);
+    }
+    
+    isPressingRef.current = false;
+  }, [previewImage]);
+
   const handleImageClick = useCallback((image: PortfolioImage, e?: React.MouseEvent | React.KeyboardEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
-      if ((e.nativeEvent as any)?.stopImmediatePropagation) {
-        (e.nativeEvent as any).stopImmediatePropagation();
+    }
+    
+    // Get the clicked image container position
+    const target = e?.currentTarget as HTMLElement;
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      const imgElement = target.querySelector('img');
+      if (imgElement) {
+        const imgRect = imgElement.getBoundingClientRect();
+        setImagePosition({
+          x: imgRect.left + imgRect.width / 2,
+          y: imgRect.top + imgRect.height / 2,
+          width: imgRect.width,
+          height: imgRect.height
+        });
+      } else {
+        setImagePosition({
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+          width: rect.width,
+          height: rect.height
+        });
       }
     }
+    
     setSelectedImage(image);
     setImageLoaded(false);
     setLightboxAnimating(false);
@@ -221,11 +354,21 @@ const Portfolio = () => {
         (e.nativeEvent as any).stopImmediatePropagation();
       }
     }
+    
+    // Clear any preview
+    setPreviewImage(null);
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+    isPressingRef.current = false;
+    
     setLightboxAnimating(true);
     setTimeout(() => {
       setSelectedImage(null);
       setLightboxAnimating(false);
       setImageLoaded(false);
+      setImagePosition(null);
     }, 200);
   }, []);
 
@@ -276,7 +419,7 @@ const Portfolio = () => {
     touchEndX.current = 0;
   }, [handleNext, handlePrevious]);
 
-  // Prevent body scroll when lightbox is open and handle keyboard navigation
+  // Handle keyboard navigation (no scroll locking)
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -286,34 +429,26 @@ const Portfolio = () => {
       }
     };
 
-      const handleArrowKeys = (e: KeyboardEvent) => {
-        if (e.key === "ArrowLeft") {
-          e.preventDefault();
+    const handleArrowKeys = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
         e.stopPropagation();
         handlePrevious();
-        } else if (e.key === "ArrowRight") {
-          e.preventDefault();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
         e.stopPropagation();
         handleNext();
       }
     };
 
     if (selectedImage) {
-      scrollLockRef.current = window.scrollY;
-      document.body.classList.add("lightbox-open");
-      document.body.style.overflow = "hidden";
-
       document.addEventListener("keydown", handleEscape, { passive: false });
       document.addEventListener("keydown", handleArrowKeys, { passive: false });
-    } else {
-      document.body.classList.remove("lightbox-open");
-        document.body.style.overflow = "";
-        window.scrollTo(0, scrollLockRef.current);
     }
 
     return () => {
-        document.removeEventListener("keydown", handleEscape);
-        document.removeEventListener("keydown", handleArrowKeys);
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleArrowKeys);
     };
   }, [selectedImage, handleCloseLightbox, handlePrevious, handleNext]);
 
@@ -334,6 +469,163 @@ const Portfolio = () => {
           </p>
         </div>
 
+        {/* Videos Section */}
+        {portfolioVideos.length > 0 && (
+          <div className="mb-16">
+            <h3 className="text-3xl md:text-4xl font-playfair font-bold gold-gradient mb-8 text-center">
+              Our Work in Motion
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 max-w-6xl mx-auto">
+              {portfolioVideos.map((video) => {
+                const isVertical = video.aspectRatio === "9/16";
+                return (
+                  <div
+                    key={video.id}
+                    className="relative bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-sm rounded-2xl overflow-hidden shadow-2xl hover:shadow-primary/20 transition-all duration-300 group p-6"
+                  >
+                    {/* Video Container with side captions */}
+                    <div className={`relative w-full flex ${isVertical ? 'justify-center items-start gap-4' : 'flex-col items-center'} mb-4`}>
+                      {/* Left/Right Side Captions for Vertical Video */}
+                      {isVertical && (
+                        <>
+                          {/* Left Side Captions */}
+                          <div className="hidden md:flex flex-col justify-center items-start gap-3 pt-8 flex-1 max-w-[120px]">
+                            <div className="text-primary text-4xl mb-2 opacity-60">{video.decorativeText}</div>
+                            {video.sideQuotes.slice(0, 2).map((quote, idx) => (
+                              <div key={idx} className="relative">
+                                <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary/40"></div>
+                                <p className="text-white/70 font-playfair text-sm md:text-base font-medium leading-tight pl-3">
+                                  {quote}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      
+                      {/* Video */}
+                      <div className="relative flex-shrink-0">
+                        <video
+                          ref={(el) => {
+                            videoRefs.current[video.id] = el;
+                            if (el) {
+                              el.loop = true;
+                              el.muted = !videoAudio[video.id];
+                              void el.play().catch(() => undefined);
+                            }
+                          }}
+                          src={video.src}
+                          className={`${isVertical ? 'w-auto h-[500px] max-w-full' : 'w-full h-auto max-h-[400px]'} object-cover rounded-lg`}
+                          style={{ 
+                            border: "2px solid rgba(212, 175, 55, 0.5)",
+                            boxShadow: "0 0 20px rgba(212, 175, 55, 0.2)"
+                          }}
+                          loop
+                          playsInline
+                          muted={!videoAudio[video.id]}
+                          preload="auto"
+                          onLoadedData={(e) => {
+                            const element = e.currentTarget;
+                            element.loop = true;
+                            element.muted = !videoAudio[video.id];
+                            void element.play().catch(() => undefined);
+                          }}
+                          onError={(e) => {
+                            // Silent error handling for production
+                            const target = e.currentTarget;
+                            const container = target.parentElement;
+                            if (container && !container.querySelector('.video-error-fallback')) {
+                              target.style.display = 'none';
+                              const errorDiv = document.createElement('div');
+                              errorDiv.className = 'video-error-fallback w-full h-full flex items-center justify-center bg-black/50 rounded-lg border-2 border-primary/30';
+                              errorDiv.innerHTML = `
+                                <div class="text-center p-4">
+                                  <p class="text-white/60 text-sm mb-2">Video unavailable</p>
+                                  <p class="text-primary/60 text-xs">${video.title}</p>
+                                </div>
+                              `;
+                              container.appendChild(errorDiv);
+                            }
+                          }}
+                        />
+                        {/* Sound Toggle Button */}
+                        <div className="absolute top-2 right-2 z-10">
+                          <button
+                            onClick={() => handleSoundToggle(video.id)}
+                            className="w-10 h-10 bg-black/70 hover:bg-black/90 rounded-full flex items-center justify-center text-white transition-colors backdrop-blur-sm shadow-lg"
+                            aria-label={videoAudio[video.id] ? "Mute" : "Unmute"}
+                          >
+                            {videoAudio[video.id] ? (
+                              <Volume2 className="w-5 h-5" />
+                            ) : (
+                              <VolumeX className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Right Side Captions for Vertical Video */}
+                      {isVertical && (
+                        <div className="hidden md:flex flex-col justify-center items-end gap-3 pt-8 flex-1 max-w-[120px]">
+                          {video.sideQuotes.slice(2, 4).map((quote, idx) => (
+                            <div key={idx} className="relative">
+                              <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary/40"></div>
+                              <p className="text-white/70 font-playfair text-sm md:text-base font-medium leading-tight text-right pr-3">
+                                {quote}
+                              </p>
+                            </div>
+                          ))}
+                          <div className="text-primary text-4xl mt-2 opacity-60">{video.decorativeText}</div>
+                        </div>
+                      )}
+
+                      {/* Top/Bottom Captions for Horizontal Video */}
+                      {!isVertical && (
+                        <div className="w-full mt-4 grid grid-cols-2 gap-4">
+                          <div className="flex flex-col items-start gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-0.5 bg-primary/50"></div>
+                              <span className="text-primary text-2xl">{video.decorativeText}</span>
+                            </div>
+                            {video.sideQuotes.slice(0, 2).map((quote, idx) => (
+                              <p key={idx} className="text-white/70 font-playfair text-sm md:text-base font-medium">
+                                {quote}
+                              </p>
+                            ))}
+                          </div>
+                          <div className="flex flex-col items-end gap-2 text-right">
+                            {video.sideQuotes.slice(2, 4).map((quote, idx) => (
+                              <p key={idx} className="text-white/70 font-playfair text-sm md:text-base font-medium">
+                                {quote}
+                              </p>
+                            ))}
+                            <div className="flex items-center gap-2 justify-end">
+                              <span className="text-primary text-2xl">{video.decorativeText}</span>
+                              <div className="w-8 h-0.5 bg-primary/50"></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Main Caption below video */}
+                    <div className="text-center space-y-3 mt-4">
+                      <div className="bg-primary/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-primary/30 inline-block">
+                        <p className="text-primary font-semibold text-xs uppercase tracking-wider">
+                          {video.title}
+                        </p>
+                      </div>
+                      <p className="text-white/90 font-playfair text-base md:text-lg font-medium leading-relaxed px-4">
+                        {video.caption}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Portfolio Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {visibleImages.map((image, index) => (
@@ -343,9 +635,6 @@ const Portfolio = () => {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if ((e.nativeEvent as any)?.stopImmediatePropagation) {
-                  (e.nativeEvent as any).stopImmediatePropagation();
-                }
                 handleImageClick(image, e);
               }}
               role="button"
@@ -358,13 +647,35 @@ const Portfolio = () => {
                 }
               }}
             >
-              <div className="aspect-square overflow-hidden bg-gray-900">
+              <div className="aspect-square overflow-hidden bg-gray-900 relative">
                 <img
                   src={image.src}
                   alt={image.alt}
                   className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-110"
                   loading={index < 12 ? "eager" : "lazy"}
+                  decoding="async"
                   draggable={false}
+                  onError={(e) => {
+                    // Fallback handling for failed image loads
+                    const target = e.currentTarget;
+                    target.style.opacity = '0';
+                    const parent = target.parentElement;
+                    if (parent && !parent.querySelector('.image-error-fallback')) {
+                      const fallback = document.createElement('div');
+                      fallback.className = 'image-error-fallback absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-400';
+                      fallback.innerHTML = '<p class="text-sm">Loading...</p>';
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                  onLoad={(e) => {
+                    // Remove any error fallback when image loads successfully
+                    const parent = e.currentTarget.parentElement;
+                    const fallback = parent?.querySelector('.image-error-fallback');
+                    if (fallback) {
+                      fallback.remove();
+                    }
+                    e.currentTarget.style.opacity = '1';
+                  }}
                 />
               </div>
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 pointer-events-none" />
@@ -390,18 +701,58 @@ const Portfolio = () => {
         )}
       </div>
 
-      {/* Premium Lightbox Viewer */}
-        {selectedImage && (
+      {/* Preview Popup - Instagram Style */}
+        {previewImage && !selectedImage && (
+          <>
+          <div
+            style={{
+              position: 'fixed',
+              top: previewImage.position.y - (previewImage.position.height * 0.75),
+              left: previewImage.position.x - (previewImage.position.width * 0.75),
+              width: previewImage.position.width * 1.5,
+              height: previewImage.position.height * 1.5,
+              zIndex: 10000,
+              pointerEvents: 'none',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.7)',
+              animation: 'previewPop 0.3s ease-out',
+              transform: 'scale(1.3)',
+              transformOrigin: 'center center'
+            }}
+          >
+            <img
+              src={previewImage.image.src}
+              alt={previewImage.image.alt}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+            />
+          </div>
+          <style>{`
+            @keyframes previewPop {
+              0% {
+                transform: scale(1);
+                opacity: 0.7;
+              }
+              100% {
+                transform: scale(1.3);
+                opacity: 1;
+              }
+            }
+          `}</style>
+          </>
+        )}
+
+      {/* Fullscreen Lightbox - Instagram Style */}
+        {selectedImage && imagePosition && (
+          <>
           <div 
-          className={`lightbox-overlay ${lightboxAnimating ? "lightbox-closing" : "lightbox-opening"}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleCloseLightbox(e);
-          }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          className="lightbox-overlay"
+          onClick={handleCloseLightbox}
           style={{
             position: 'fixed',
             top: 0,
@@ -409,91 +760,136 @@ const Portfolio = () => {
             right: 0,
             bottom: 0,
             zIndex: 10001,
-            width: '100vw',
-            height: '100vh',
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            backdropFilter: 'blur(16px)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            animation: 'fadeIn 0.3s ease-out'
           }}
           >
             {/* Close Button */}
             <button
-            className="lightbox-close"
-            onClick={handleCloseLightbox}
-            aria-label="Close lightbox"
+              onClick={handleCloseLightbox}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                zIndex: 10002,
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
             >
-            <X className="w-6 h-6 md:w-8 md:h-8" />
+              <X className="w-6 h-6" />
             </button>
 
-          {/* Previous Button */}
+            {/* Previous Button */}
             {currentImageIndex > 0 && (
               <button
-              className="lightbox-nav lightbox-nav-prev"
                 onClick={handlePrevious}
-                aria-label="Previous image"
+                style={{
+                  position: 'absolute',
+                  left: '20px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 10002,
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
               >
-              <ArrowLeft className="w-6 h-6 md:w-8 md:h-8" />
+                <ArrowLeft className="w-6 h-6" />
               </button>
             )}
 
-          {/* Next Button */}
-          {currentImageIndex < allPortfolioImages.length - 1 && (
+            {/* Next Button */}
+            {currentImageIndex < allPortfolioImages.length - 1 && (
               <button
-              className="lightbox-nav lightbox-nav-next"
                 onClick={handleNext}
-                aria-label="Next image"
+                style={{
+                  position: 'absolute',
+                  right: '20px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 10002,
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
               >
-              <ArrowRight className="w-6 h-6 md:w-8 md:h-8" />
+                <ArrowRight className="w-6 h-6" />
               </button>
             )}
 
-            {/* Image Container */}
-            <div
-            className="lightbox-image-container"
-              onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative'
-            }}
-          >
-            {!imageLoaded && (
-              <div className="lightbox-loader">
-                <div className="lightbox-spinner"></div>
-              </div>
-            )}
+            {/* Image - Expands from clicked position */}
             <img
-              ref={lightboxImageRef}
-                src={selectedImage.src}
-                alt={selectedImage.alt}
-              className={`lightbox-image ${imageLoaded ? "lightbox-image-loaded" : ""}`}
+              src={selectedImage.src}
+              alt={selectedImage.alt}
+              onClick={(e) => e.stopPropagation()}
               onLoad={() => setImageLoaded(true)}
-              onError={() => setImageLoaded(true)}
-              draggable={false}
               style={{
-                maxWidth: 'calc(100vw - 2rem)',
-                maxHeight: 'calc(100vh - 2rem)',
-                width: 'auto',
-                height: 'auto',
+                maxWidth: '90vw',
+                maxHeight: '90vh',
                 objectFit: 'contain',
-                objectPosition: 'center',
-                margin: 'auto',
-                display: 'block'
+                transformOrigin: `${imagePosition.x}px ${imagePosition.y}px`,
+                animation: `imageExpand 0.4s cubic-bezier(0.4, 0, 0.2, 1)`
               }}
             />
-            </div>
 
             {/* Image Counter */}
-          <div className="lightbox-counter">
-            {currentImageIndex + 1} / {allPortfolioImages.length}
+            <div style={{
+              position: 'absolute',
+              bottom: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0, 0, 0, 0.6)',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              color: 'white',
+              fontSize: '14px'
+            }}>
+              {currentImageIndex + 1} / {allPortfolioImages.length}
+            </div>
           </div>
-        </div>
-      )}
+          <style>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes imageExpand {
+              from {
+                transform: scale(${imagePosition ? Math.min(imagePosition.width / 1728, imagePosition.height / 972) : 1});
+                opacity: 0.8;
+              }
+              to {
+                transform: scale(1);
+                opacity: 1;
+              }
+            }
+          `}</style>
+          </>
+        )}
     </section>
   );
 };

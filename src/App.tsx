@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import { useSmoothScroll } from "./hooks/useSmoothScroll";
 import ScrollProgress from "./components/ScrollProgress";
 import PremiumLoader from "./components/PremiumLoader";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -61,27 +62,29 @@ const SmoothScrollInit = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <HelmetProvider>
-      <TooltipProvider>
-        <PremiumLoader />
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <ScrollProgress />
-          <ScrollToTop />
-          <SmoothScrollInit />
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/makeup-republic" element={<MakeupRepublic />} />
-            <Route path="/d-events" element={<DeeEvents />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </HelmetProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <HelmetProvider>
+        <TooltipProvider>
+          <PremiumLoader />
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ScrollProgress />
+            <ScrollToTop />
+            <SmoothScrollInit />
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/makeup-republic" element={<MakeupRepublic />} />
+              <Route path="/d-events" element={<DeeEvents />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </HelmetProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
