@@ -1,9 +1,22 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { X, ArrowLeft, ArrowRight, Volume2, VolumeX } from "lucide-react";
 
-// Import portfolio videos
+// Import portfolio videos - use CDN in production if configured
+// In production with CDN, these will be replaced with CDN URLs
 import portfolioVideo1 from "@/assets/portfolio video/C5443.mp4";
 import portfolioVideo2 from "@/assets/portfolio video/C5444.mp4";
+
+// CDN configuration - set VITE_MEDIA_CDN_URL in Vercel environment variables
+const CDN_URL = import.meta.env.VITE_MEDIA_CDN_URL || '';
+const USE_CDN = !!CDN_URL && import.meta.env.PROD;
+
+// Helper to get video URL (CDN in production, local in dev)
+const getVideoUrl = (localPath: string, filename: string): string => {
+  if (USE_CDN) {
+    return `${CDN_URL}/video/upload/${filename}`;
+  }
+  return localPath;
+};
 
 // Import all portfolio images
 import portfolio01 from "@/assets/portfolio images/portfolio-01.jpg";
@@ -28,67 +41,53 @@ import portfolio19 from "@/assets/portfolio images/portfolio-19.jpg";
 import portfolio20 from "@/assets/portfolio images/portfolio-20.jpg";
 import portfolio21 from "@/assets/portfolio images/portfolio-21.jpg";
 import portfolio22 from "@/assets/portfolio images/portfolio-22.jpg";
-import portfolio23 from "@/assets/portfolio images/portfolio-23.jpg";
-import portfolio24 from "@/assets/portfolio images/portfolio-24.jpg";
-import portfolio25 from "@/assets/portfolio images/portfolio-25.jpg";
-import rck02067 from "@/assets/portfolio images/rck02067.jpg";
-import rck02068 from "@/assets/portfolio images/rck02068.jpg";
-import rck02069 from "@/assets/portfolio images/rck02069.jpg";
-import rck02070 from "@/assets/portfolio images/RCK02070.JPG";
-import rck02071 from "@/assets/portfolio images/rck02071.jpg";
-import rck02072 from "@/assets/portfolio images/rck02072.jpg";
-import rck02073 from "@/assets/portfolio images/rck02073.jpg";
-import rck02074 from "@/assets/portfolio images/rck02074.jpg";
-import rck02075 from "@/assets/portfolio images/rck02075.jpg";
-import rck02076 from "@/assets/portfolio images/rck02076.jpg";
-import rck02077 from "@/assets/portfolio images/rck02077.jpg";
-import rck02078 from "@/assets/portfolio images/rck02078.jpg";
-import rck02079 from "@/assets/portfolio images/rck02079.jpg";
-import rck02080 from "@/assets/portfolio images/rck02080.jpg";
-import rck02081 from "@/assets/portfolio images/rck02081.jpg";
-import rck02086 from "@/assets/portfolio images/RCK02086.JPG";
-import rck02123 from "@/assets/portfolio images/RCK02123.JPG";
-import rck02139 from "@/assets/portfolio images/RCK02139.JPG";
-import rck02144 from "@/assets/portfolio images/RCK02144.JPG";
-import rck02588 from "@/assets/portfolio images/RCK02588.JPG";
-import rck02595 from "@/assets/portfolio images/RCK02595.JPG";
-import rck02600 from "@/assets/portfolio images/RCK02600.JPG";
-import rck02608 from "@/assets/portfolio images/RCK02608.JPG";
-import rck02658 from "@/assets/portfolio images/RCK02658.JPG";
-import rck03045 from "@/assets/portfolio images/RCK03045.JPG";
-import rck03047 from "@/assets/portfolio images/RCK03047.JPG";
-import rck03051 from "@/assets/portfolio images/RCK03051.JPG";
-import rck03106 from "@/assets/portfolio images/RCK03106.JPG";
-import rck03148 from "@/assets/portfolio images/RCK03148.JPG";
-import rck07657 from "@/assets/portfolio images/RCK07657.JPG";
-import rck07665 from "@/assets/portfolio images/RCK07665.JPG";
-import rck07669 from "@/assets/portfolio images/RCK07669.JPG";
-import rck07682 from "@/assets/portfolio images/RCK07682.JPG";
-import rck07690 from "@/assets/portfolio images/RCK07690.JPG";
-import rck07691 from "@/assets/portfolio images/RCK07691.JPG";
-import rck07693 from "@/assets/portfolio images/RCK07693.JPG";
-import rck07701 from "@/assets/portfolio images/RCK07701.JPG";
-import rck07737 from "@/assets/portfolio images/RCK07737.JPG";
-import rck07744 from "@/assets/portfolio images/RCK07744.JPG";
-import rck07751 from "@/assets/portfolio images/RCK07751.JPG";
-import rck07753 from "@/assets/portfolio images/RCK07753.JPG";
-import rck07754 from "@/assets/portfolio images/RCK07754.JPG";
-import rck07756 from "@/assets/portfolio images/RCK07756.JPG";
-import rck07795 from "@/assets/portfolio images/RCK07795.JPG";
-import rck07821 from "@/assets/portfolio images/RCK07821.JPG";
-import rck07836 from "@/assets/portfolio images/RCK07836.JPG";
-import rck07846 from "@/assets/portfolio images/RCK07846.JPG";
-import rck07860 from "@/assets/portfolio images/RCK07860.JPG";
-import rck07862 from "@/assets/portfolio images/RCK07862.JPG";
-import rck07916 from "@/assets/portfolio images/RCK07916.JPG";
-import rck07941 from "@/assets/portfolio images/RCK07941.JPG";
-import rck07951 from "@/assets/portfolio images/RCK07951.JPG";
-import rck07972 from "@/assets/portfolio images/RCK07972.JPG";
-import rck07987 from "@/assets/portfolio images/RCK07987.JPG";
-import rck07997 from "@/assets/portfolio images/RCK07997.JPG";
-import rck07998 from "@/assets/portfolio images/RCK07998.JPG";
-import rck08004 from "@/assets/portfolio images/RCK08004.JPG";
-import rck08033 from "@/assets/portfolio images/RCK08033.JPG";
+import whatsapp1 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (1).jpeg";
+import whatsapp2 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (10).jpeg";
+import whatsapp3 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (11).jpeg";
+import whatsapp4 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (12).jpeg";
+import whatsapp5 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (13).jpeg";
+import whatsapp6 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (14).jpeg";
+import whatsapp7 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (15).jpeg";
+import whatsapp8 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (16).jpeg";
+import whatsapp9 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (17).jpeg";
+import whatsapp10 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (18).jpeg";
+import whatsapp11 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (19).jpeg";
+import whatsapp12 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (2).jpeg";
+import whatsapp13 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (20).jpeg";
+import whatsapp14 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (21).jpeg";
+import whatsapp15 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (22).jpeg";
+import whatsapp16 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (23).jpeg";
+import whatsapp17 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (24).jpeg";
+import whatsapp18 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (25).jpeg";
+import whatsapp19 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (3).jpeg";
+import whatsapp20 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (4).jpeg";
+import whatsapp21 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (5).jpeg";
+import whatsapp22 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (6).jpeg";
+import whatsapp23 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (7).jpeg";
+import whatsapp24 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (8).jpeg";
+import whatsapp25 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM (9).jpeg";
+import whatsapp26 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.42 AM.jpeg";
+import whatsapp27 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (1).jpeg";
+import whatsapp28 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (10).jpeg";
+import whatsapp29 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (11).jpeg";
+import whatsapp30 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (12).jpeg";
+import whatsapp31 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (13).jpeg";
+import whatsapp32 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (14).jpeg";
+import whatsapp33 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (15).jpeg";
+import whatsapp34 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (16).jpeg";
+import whatsapp35 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (17).jpeg";
+import whatsapp36 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (18).jpeg";
+import whatsapp37 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (19).jpeg";
+import whatsapp38 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (2).jpeg";
+import whatsapp39 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (20).jpeg";
+import whatsapp40 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (3).jpeg";
+import whatsapp41 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (4).jpeg";
+import whatsapp42 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (5).jpeg";
+import whatsapp43 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (6).jpeg";
+import whatsapp44 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (7).jpeg";
+import whatsapp45 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (8).jpeg";
+import whatsapp46 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM (9).jpeg";
+import whatsapp47 from "@/assets/portfolio images/WhatsApp Image 2025-11-26 at 10.38.43 AM.jpeg";
 
 type PortfolioImage = {
   id: string;
@@ -120,67 +119,53 @@ const allPortfolioImages: PortfolioImage[] = [
   { id: "portfolio20", src: portfolio20, alt: "Bridal makeup transformation" },
   { id: "portfolio21", src: portfolio21, alt: "Bridal makeup transformation" },
   { id: "portfolio22", src: portfolio22, alt: "Bridal makeup transformation" },
-  { id: "portfolio23", src: portfolio23, alt: "Bridal makeup transformation" },
-  { id: "portfolio24", src: portfolio24, alt: "Bridal makeup transformation" },
-  { id: "portfolio25", src: portfolio25, alt: "Bridal makeup transformation" },
-  { id: "rck02067", src: rck02067, alt: "Bridal makeup transformation" },
-  { id: "rck02068", src: rck02068, alt: "Bridal makeup transformation" },
-  { id: "rck02069", src: rck02069, alt: "Bridal makeup transformation" },
-  { id: "rck02070", src: rck02070, alt: "Bridal makeup transformation" },
-  { id: "rck02071", src: rck02071, alt: "Bridal makeup transformation" },
-  { id: "rck02072", src: rck02072, alt: "Bridal makeup transformation" },
-  { id: "rck02073", src: rck02073, alt: "Bridal makeup transformation" },
-  { id: "rck02074", src: rck02074, alt: "Bridal makeup transformation" },
-  { id: "rck02075", src: rck02075, alt: "Bridal makeup transformation" },
-  { id: "rck02076", src: rck02076, alt: "Bridal makeup transformation" },
-  { id: "rck02077", src: rck02077, alt: "Bridal makeup transformation" },
-  { id: "rck02078", src: rck02078, alt: "Bridal makeup transformation" },
-  { id: "rck02079", src: rck02079, alt: "Bridal makeup transformation" },
-  { id: "rck02080", src: rck02080, alt: "Bridal makeup transformation" },
-  { id: "rck02081", src: rck02081, alt: "Bridal makeup transformation" },
-  { id: "rck02086", src: rck02086, alt: "Bridal makeup transformation" },
-  { id: "rck02123", src: rck02123, alt: "Bridal makeup transformation" },
-  { id: "rck02139", src: rck02139, alt: "Bridal makeup transformation" },
-  { id: "rck02144", src: rck02144, alt: "Bridal makeup transformation" },
-  { id: "rck02588", src: rck02588, alt: "Bridal makeup transformation" },
-  { id: "rck02595", src: rck02595, alt: "Bridal makeup transformation" },
-  { id: "rck02600", src: rck02600, alt: "Bridal makeup transformation" },
-  { id: "rck02608", src: rck02608, alt: "Bridal makeup transformation" },
-  { id: "rck02658", src: rck02658, alt: "Bridal makeup transformation" },
-  { id: "rck03045", src: rck03045, alt: "Bridal makeup transformation" },
-  { id: "rck03047", src: rck03047, alt: "Bridal makeup transformation" },
-  { id: "rck03051", src: rck03051, alt: "Bridal makeup transformation" },
-  { id: "rck03106", src: rck03106, alt: "Bridal makeup transformation" },
-  { id: "rck03148", src: rck03148, alt: "Bridal makeup transformation" },
-  { id: "rck07657", src: rck07657, alt: "Bridal makeup transformation" },
-  { id: "rck07665", src: rck07665, alt: "Bridal makeup transformation" },
-  { id: "rck07669", src: rck07669, alt: "Bridal makeup transformation" },
-  { id: "rck07682", src: rck07682, alt: "Bridal makeup transformation" },
-  { id: "rck07690", src: rck07690, alt: "Bridal makeup transformation" },
-  { id: "rck07691", src: rck07691, alt: "Bridal makeup transformation" },
-  { id: "rck07693", src: rck07693, alt: "Bridal makeup transformation" },
-  { id: "rck07701", src: rck07701, alt: "Bridal makeup transformation" },
-  { id: "rck07737", src: rck07737, alt: "Bridal makeup transformation" },
-  { id: "rck07744", src: rck07744, alt: "Bridal makeup transformation" },
-  { id: "rck07751", src: rck07751, alt: "Bridal makeup transformation" },
-  { id: "rck07753", src: rck07753, alt: "Bridal makeup transformation" },
-  { id: "rck07754", src: rck07754, alt: "Bridal makeup transformation" },
-  { id: "rck07756", src: rck07756, alt: "Bridal makeup transformation" },
-  { id: "rck07795", src: rck07795, alt: "Bridal makeup transformation" },
-  { id: "rck07821", src: rck07821, alt: "Bridal makeup transformation" },
-  { id: "rck07836", src: rck07836, alt: "Bridal makeup transformation" },
-  { id: "rck07846", src: rck07846, alt: "Bridal makeup transformation" },
-  { id: "rck07860", src: rck07860, alt: "Bridal makeup transformation" },
-  { id: "rck07862", src: rck07862, alt: "Bridal makeup transformation" },
-  { id: "rck07916", src: rck07916, alt: "Bridal makeup transformation" },
-  { id: "rck07941", src: rck07941, alt: "Bridal makeup transformation" },
-  { id: "rck07951", src: rck07951, alt: "Bridal makeup transformation" },
-  { id: "rck07972", src: rck07972, alt: "Bridal makeup transformation" },
-  { id: "rck07987", src: rck07987, alt: "Bridal makeup transformation" },
-  { id: "rck07997", src: rck07997, alt: "Bridal makeup transformation" },
-  { id: "rck07998", src: rck07998, alt: "Bridal makeup transformation" },
-  { id: "rck08004", src: rck08004, alt: "Bridal makeup transformation" },
-  { id: "rck08033", src: rck08033, alt: "Bridal makeup transformation" },
+  { id: "whatsapp1", src: whatsapp1, alt: "Bridal makeup transformation" },
+  { id: "whatsapp2", src: whatsapp2, alt: "Bridal makeup transformation" },
+  { id: "whatsapp3", src: whatsapp3, alt: "Bridal makeup transformation" },
+  { id: "whatsapp4", src: whatsapp4, alt: "Bridal makeup transformation" },
+  { id: "whatsapp5", src: whatsapp5, alt: "Bridal makeup transformation" },
+  { id: "whatsapp6", src: whatsapp6, alt: "Bridal makeup transformation" },
+  { id: "whatsapp7", src: whatsapp7, alt: "Bridal makeup transformation" },
+  { id: "whatsapp8", src: whatsapp8, alt: "Bridal makeup transformation" },
+  { id: "whatsapp9", src: whatsapp9, alt: "Bridal makeup transformation" },
+  { id: "whatsapp10", src: whatsapp10, alt: "Bridal makeup transformation" },
+  { id: "whatsapp11", src: whatsapp11, alt: "Bridal makeup transformation" },
+  { id: "whatsapp12", src: whatsapp12, alt: "Bridal makeup transformation" },
+  { id: "whatsapp13", src: whatsapp13, alt: "Bridal makeup transformation" },
+  { id: "whatsapp14", src: whatsapp14, alt: "Bridal makeup transformation" },
+  { id: "whatsapp15", src: whatsapp15, alt: "Bridal makeup transformation" },
+  { id: "whatsapp16", src: whatsapp16, alt: "Bridal makeup transformation" },
+  { id: "whatsapp17", src: whatsapp17, alt: "Bridal makeup transformation" },
+  { id: "whatsapp18", src: whatsapp18, alt: "Bridal makeup transformation" },
+  { id: "whatsapp19", src: whatsapp19, alt: "Bridal makeup transformation" },
+  { id: "whatsapp20", src: whatsapp20, alt: "Bridal makeup transformation" },
+  { id: "whatsapp21", src: whatsapp21, alt: "Bridal makeup transformation" },
+  { id: "whatsapp22", src: whatsapp22, alt: "Bridal makeup transformation" },
+  { id: "whatsapp23", src: whatsapp23, alt: "Bridal makeup transformation" },
+  { id: "whatsapp24", src: whatsapp24, alt: "Bridal makeup transformation" },
+  { id: "whatsapp25", src: whatsapp25, alt: "Bridal makeup transformation" },
+  { id: "whatsapp26", src: whatsapp26, alt: "Bridal makeup transformation" },
+  { id: "whatsapp27", src: whatsapp27, alt: "Bridal makeup transformation" },
+  { id: "whatsapp28", src: whatsapp28, alt: "Bridal makeup transformation" },
+  { id: "whatsapp29", src: whatsapp29, alt: "Bridal makeup transformation" },
+  { id: "whatsapp30", src: whatsapp30, alt: "Bridal makeup transformation" },
+  { id: "whatsapp31", src: whatsapp31, alt: "Bridal makeup transformation" },
+  { id: "whatsapp32", src: whatsapp32, alt: "Bridal makeup transformation" },
+  { id: "whatsapp33", src: whatsapp33, alt: "Bridal makeup transformation" },
+  { id: "whatsapp34", src: whatsapp34, alt: "Bridal makeup transformation" },
+  { id: "whatsapp35", src: whatsapp35, alt: "Bridal makeup transformation" },
+  { id: "whatsapp36", src: whatsapp36, alt: "Bridal makeup transformation" },
+  { id: "whatsapp37", src: whatsapp37, alt: "Bridal makeup transformation" },
+  { id: "whatsapp38", src: whatsapp38, alt: "Bridal makeup transformation" },
+  { id: "whatsapp39", src: whatsapp39, alt: "Bridal makeup transformation" },
+  { id: "whatsapp40", src: whatsapp40, alt: "Bridal makeup transformation" },
+  { id: "whatsapp41", src: whatsapp41, alt: "Bridal makeup transformation" },
+  { id: "whatsapp42", src: whatsapp42, alt: "Bridal makeup transformation" },
+  { id: "whatsapp43", src: whatsapp43, alt: "Bridal makeup transformation" },
+  { id: "whatsapp44", src: whatsapp44, alt: "Bridal makeup transformation" },
+  { id: "whatsapp45", src: whatsapp45, alt: "Bridal makeup transformation" },
+  { id: "whatsapp46", src: whatsapp46, alt: "Bridal makeup transformation" },
+  { id: "whatsapp47", src: whatsapp47, alt: "Bridal makeup transformation" },
 ];
 
 const INITIAL_VISIBLE = 12;
@@ -211,7 +196,7 @@ const Portfolio = () => {
     { 
       id: "video1", 
       title: "Portfolio Showreel 1", 
-      src: portfolioVideo1,
+      src: getVideoUrl(portfolioVideo1, 'C5443.mp4'),
       aspectRatio: "9/16", // Instagram Reel ratio (vertical)
       caption: "Transformations that speak volumes • Bridal artistry redefined",
       sideQuotes: [
@@ -222,10 +207,10 @@ const Portfolio = () => {
       ],
       decorativeText: "✨"
     },
-    { 
-      id: "video2", 
-      title: "Portfolio Showreel 2", 
-      src: portfolioVideo2,
+    {
+      id: "video2",
+      title: "Portfolio Showreel 2",
+      src: getVideoUrl(portfolioVideo2, 'C5444.mp4'),
       aspectRatio: "16/9", // YouTube ratio (horizontal)
       caption: "Every brushstroke tells a story • Crafting perfection, one look at a time",
       sideQuotes: [
